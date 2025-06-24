@@ -1,18 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
 import requests
 import json
 import time
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import base64
 from io import BytesIO
-import matplotlib.pyplot as plt
-import seaborn as sns
-from PIL import Image
 import hashlib
 
 # Page configuration
@@ -97,53 +92,6 @@ def load_css():
         border-color: rgba(0,212,255,0.5);
     }
     
-    /* Button styles */
-    .stButton > button {
-        background: linear-gradient(45deg, #00d4ff, #0099cc);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 0.5rem 1rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,212,255,0.3);
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,212,255,0.4);
-    }
-    
-    /* Sidebar styles */
-    .css-1d391kg {
-        background: linear-gradient(180deg, rgba(10,10,46,0.9) 0%, rgba(22,33,62,0.9) 100%);
-        border-right: 1px solid rgba(0,212,255,0.3);
-    }
-    
-    /* Input styles */
-    .stTextInput > div > div > input {
-        background: rgba(0,212,255,0.1);
-        border: 1px solid rgba(0,212,255,0.3);
-        border-radius: 10px;
-        color: white;
-    }
-    
-    .stSelectbox > div > div > select {
-        background: rgba(0,212,255,0.1);
-        border: 1px solid rgba(0,212,255,0.3);
-        border-radius: 10px;
-        color: white;
-    }
-    
-    /* Chart containers */
-    .chart-container {
-        background: rgba(0,212,255,0.05);
-        border-radius: 15px;
-        padding: 1rem;
-        border: 1px solid rgba(0,212,255,0.2);
-        margin: 1rem 0;
-    }
-    
     /* Status indicators */
     .status-online {
         color: #00ff88;
@@ -153,22 +101,6 @@ def load_css():
     .status-offline {
         color: #ff6b6b;
         font-weight: bold;
-    }
-    
-    /* Loading animation */
-    .loading-spinner {
-        border: 3px solid rgba(0,212,255,0.3);
-        border-top: 3px solid #00d4ff;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
     </style>
     
@@ -256,7 +188,6 @@ class MultimodalOceanAnalyzer:
     @staticmethod
     def analyze_image(image_data):
         """Mock image analysis for ocean-related content"""
-        # In real implementation, this would use computer vision models
         analysis_results = {
             "detected_objects": ["Marine life", "Water surface", "Underwater terrain"],
             "water_quality": np.random.choice(["Excellent", "Good", "Fair", "Poor"]),
@@ -355,59 +286,39 @@ def show_dashboard(data_sim):
         </div>
         """, unsafe_allow_html=True)
     
-    # Charts section
+    # Charts section using Streamlit built-in charts
     st.markdown("---")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
         st.subheader("🌡️ Ocean Temperature Trends")
-        
         temp_data = data_sim.generate_ocean_temperature_data(30)
-        fig = px.line(temp_data, x='Date', y='Temperature', 
-                     title="30-Day Temperature Analysis",
-                     color_discrete_sequence=['#00d4ff'])
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font_color='white'
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        chart_data = temp_data.set_index('Date')['Temperature']
+        st.line_chart(chart_data)
     
     with col2:
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
         st.subheader("🐠 Marine Biodiversity Distribution")
-        
         bio_data = data_sim.generate_marine_biodiversity_data()
-        fig = px.pie(bio_data, values='Population', names='Species',
-                    title="Species Population Distribution",
-                    color_discrete_sequence=px.colors.sequential.Blues_r)
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font_color='white'
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        chart_data = bio_data.set_index('Species')['Population']
+        st.bar_chart(chart_data)
     
     # Pollution monitoring
-    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
     st.subheader("🏭 Ocean Pollution Monitoring")
-    
     pollution_data = data_sim.generate_pollution_data()
-    fig = px.scatter(pollution_data, x='Concentration', y='Impact_Score',
-                    color='Pollution_Type', size='Concentration',
-                    hover_data=['Region', 'Trend'],
-                    title="Pollution Impact Analysis Across Ocean Regions")
-    fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Display pollution data as table and simple charts
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Pollution by Type**")
+        pollution_summary = pollution_data.groupby('Pollution_Type')['Concentration'].mean().sort_values(ascending=False)
+        st.bar_chart(pollution_summary)
+    
+    with col2:
+        st.write("**Impact Score by Region**")
+        impact_summary = pollution_data.groupby('Region')['Impact_Score'].mean().sort_values(ascending=False)
+        st.bar_chart(impact_summary)
 
 def show_ai_assistant(rag_system):
     """AI Research Assistant with RAG capabilities"""
@@ -520,19 +431,16 @@ def show_data_analytics(data_sim):
         col1, col2 = st.columns(2)
         
         with col1:
-            # Temperature trend
-            fig = px.line(filtered_data, x='Date', y='Temperature', 
-                         color='Location',
-                         title=f"Temperature Trends - Last {days} Days")
-            fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='white')
-            st.plotly_chart(fig, use_container_width=True)
+            # Temperature trend using built-in charts
+            st.write("**Temperature Trends Over Time**")
+            chart_data = filtered_data.set_index('Date')['Temperature']
+            st.line_chart(chart_data)
         
         with col2:
-            # Temperature distribution by location
-            fig = px.box(filtered_data, x='Location', y='Temperature',
-                        title="Temperature Distribution by Ocean")
-            fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='white')
-            st.plotly_chart(fig, use_container_width=True)
+            # Temperature by location
+            st.write("**Average Temperature by Location**")
+            location_avg = filtered_data.groupby('Location')['Temperature'].mean().sort_values(ascending=True)
+            st.bar_chart(location_avg)
         
         # Statistical summary
         st.subheader("📈 Statistical Summary")
@@ -548,20 +456,15 @@ def show_data_analytics(data_sim):
         
         with col1:
             # Population by species
-            fig = px.bar(bio_data.sort_values('Population', ascending=False), 
-                        x='Species', y='Population',
-                        color='Conservation_Status',
-                        title="Species Population by Conservation Status")
-            fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='white')
-            st.plotly_chart(fig, use_container_width=True)
+            st.write("**Species Population**")
+            population_data = bio_data.set_index('Species')['Population'].sort_values(ascending=True)
+            st.bar_chart(population_data)
         
         with col2:
             # Threat level distribution
+            st.write("**Threat Level Distribution**")
             threat_counts = bio_data['Threat_Level'].value_counts()
-            fig = px.pie(values=threat_counts.values, names=threat_counts.index,
-                        title="Species by Threat Level")
-            fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='white')
-            st.plotly_chart(fig, use_container_width=True)
+            st.bar_chart(threat_counts)
         
         # Detailed data table
         st.subheader("📋 Species Details")
@@ -635,66 +538,13 @@ def show_multimodal_analysis(multimodal_analyzer):
                 st.markdown(f"**⚠️ Pollution Indicators:** {analysis['pollution_indicators']}")
                 
                 # Confidence visualization
-                confidence_data = {
+                confidence_data = pd.DataFrame({
                     'Metric': ['Water Quality', 'Depth Estimation', 'Life Detection', 'Pollution Analysis'],
                     'Confidence': [92, 87, 94, 89]
-                }
+                })
                 
-                fig = px.bar(confidence_data, x='Metric', y='Confidence',
-                           title="AI Analysis Confidence Scores",
-                           color='Confidence',
-                           color_continuous_scale='Blues')
-                fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='white')
-                st.plotly_chart(fig, use_container_width=True)
-    
-    elif analysis_mode == "🌊 Sensor Data Fusion":
-        st.subheader("🌐 Multi-Sensor Data Integration")
-        
-        # Simulate sensor data
-        sensor_types = ['Temperature', 'Salinity', 'pH', 'Dissolved Oxygen', 'Turbidity']
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("### 📡 Active Sensors")
-            for sensor in sensor_types:
-                value = np.random.uniform(0, 100)
-                status = "🟢 Online" if value > 20 else "🔴 Offline"
-                st.markdown(f"**{sensor}:** {value:.1f} units - {status}")
-        
-        with col2:
-            st.markdown("### 📊 Sensor Correlation Matrix")
-            # Generate correlation data
-            correlation_data = np.random.rand(len(sensor_types), len(sensor_types))
-            correlation_data = (correlation_data + correlation_data.T) / 2  # Make symmetric
-            np.fill_diagonal(correlation_data, 1)  # Perfect self-correlation
-            
-            fig = px.imshow(correlation_data, 
-                          x=sensor_types,
-                          y=sensor_types,
-                          color_continuous_scale='Blues',
-                          title="Sensor Data Correlation")
-            fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='white')
-            st.plotly_chart(fig, use_container_width=True)
-        
-        # Real-time data simulation
-        st.markdown("### 📈 Real-time Sensor Feeds")
-        if st.button("🔄 Refresh Data"):
-            # Generate time series data for sensors
-            timestamps = pd.date_range(start=datetime.now() - timedelta(hours=24), 
-                                     end=datetime.now(), freq='H')
-            
-            sensor_data = pd.DataFrame({
-                'Timestamp': timestamps,
-                'Temperature': 15 + 5 * np.sin(np.linspace(0, 4*np.pi, len(timestamps))) + np.random.normal(0, 0.5, len(timestamps)),
-                'Salinity': 35 + 2 * np.cos(np.linspace(0, 2*np.pi, len(timestamps))) + np.random.normal(0, 0.3, len(timestamps)),
-                'pH': 8.1 + 0.3 * np.sin(np.linspace(0, 3*np.pi, len(timestamps))) + np.random.normal(0, 0.1, len(timestamps))
-            })
-            
-            fig = px.line(sensor_data, x='Timestamp', y=['Temperature', 'Salinity', 'pH'],
-                         title="24-Hour Sensor Data Trends")
-            fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color='white')
-            st.plotly_chart(fig, use_container_width=True)
+                st.write("**AI Analysis Confidence Scores**")
+                st.bar_chart(confidence_data.set_index('Metric')['Confidence'])
 
 def show_collaboration_hub():
     """Collaboration and project management hub"""
@@ -781,55 +631,6 @@ def show_collaboration_hub():
             st.balloons()
         else:
             st.error("Please fill in required fields")
-    
-    # Researcher network
-    st.markdown("---")
-    st.subheader("👥 Researcher Network")
-    
-    # Sample researcher profiles
-    researchers = [
-        {"name": "Dr. Sarah Chen", "discipline": "Marine Biology", "expertise": "Microplastic Analysis", "projects": 3, "location": "Stanford University"},
-        {"name": "Prof. James Rodriguez", "discipline": "Biotechnology", "expertise": "Coral Restoration", "projects": 2, "location": "MIT"},
-        {"name": "Dr. Maya Patel", "discipline": "Mechanical Engineering", "expertise": "Wave Energy", "projects": 4, "location": "UC Berkeley"},
-        {"name": "Dr. Alex Kim", "discipline": "Data Science", "expertise": "Ocean Modeling", "projects": 5, "location": "Woods Hole"},
-        {"name": "Prof. Lisa Zhang", "discipline": "AI/ML", "expertise": "Computer Vision", "projects": 3, "location": "CMU"}
-    ]
-    
-    # Display researcher cards
-    cols = st.columns(3)
-    for i, researcher in enumerate(researchers):
-        with cols[i % 3]:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h4>👤 {researcher['name']}</h4>
-                <p><strong>🔬 {researcher['discipline']}</strong></p>
-                <p>🎯 {researcher['expertise']}</p>
-                <p>📍 {researcher['location']}</p>
-                <p>🚀 {researcher['projects']} Active Projects</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Communication tools
-    st.markdown("---")
-    st.subheader("💬 Communication & Tools")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        if st.button("📧 Send Message"):
-            st.info("Opening messaging interface...")
-    
-    with col2:
-        if st.button("🎥 Start Video Call"):
-            st.info("Launching video conference...")
-    
-    with col3:
-        if st.button("📁 Share Files"):
-            st.info("Opening file sharing...")
-    
-    with col4:
-        if st.button("📅 Schedule Meeting"):
-            st.info("Opening calendar...")
 
 def show_knowledge_base():
     """Comprehensive knowledge base and documentation"""
@@ -971,99 +772,6 @@ def show_knowledge_base():
                 st.info("📧 You'll receive notification once approved.")
             else:
                 st.error("Please fill in required fields")
-
-# Additional utility functions
-def generate_api_documentation():
-    """Generate API documentation for the platform"""
-    api_docs = {
-        "endpoints": [
-            {
-                "method": "GET",
-                "path": "/api/v1/ocean-data/temperature",
-                "description": "Retrieve ocean temperature data",
-                "parameters": ["start_date", "end_date", "location", "depth_range"]
-            },
-            {
-                "method": "POST",
-                "path": "/api/v1/ai/analyze-image",
-                "description": "Submit image for AI analysis",
-                "parameters": ["image_file", "analysis_type"]
-            },
-            {
-                "method": "GET",
-                "path": "/api/v1/research/projects",
-                "description": "Get list of active research projects",
-                "parameters": ["status", "discipline", "limit"]
-            }
-        ]
-    }
-    return api_docs
-
-def create_deployment_guide():
-    """Create deployment guide for the application"""
-    guide = """
-    # 🚀 OceanaSync Hub Deployment Guide
-    
-    ## Prerequisites
-    - Python 3.8+
-    - Miniconda/Anaconda
-    - Git
-    
-    ## Local Development Setup
-    
-    1. **Clone Repository**
-    ```bash
-    git clone https://github.com/oceanasync/hub.git
-    cd oceanasync-hub
-    ```
-    
-    2. **Create Conda Environment**
-    ```bash
-    conda create -n oceanasync python=3.9
-    conda activate oceanasync
-    ```
-    
-    3. **Install Dependencies**
-    ```bash
-    pip install -r requirements.txt
-    ```
-    
-    4. **Run Application**
-    ```bash
-    streamlit run app.py
-    ```
-    
-    ## Production Deployment
-    
-    ### Option 1: Streamlit Cloud
-    1. Push code to GitHub
-    2. Connect to Streamlit Cloud
-    3. Deploy with one click
-    
-    ### Option 2: Docker
-    ```bash
-    docker build -t oceanasync-hub .
-    docker run -p 8501:8501 oceanasync-hub
-    ```
-    
-    ### Option 3: AWS/Azure/GCP
-    - Use container services
-    - Configure load balancing
-    - Set up monitoring
-    
-    ## Environment Variables
-    ```
-    OPENROUTER_API_KEY=your_api_key
-    DATABASE_URL=your_database_url
-    REDIS_URL=your_redis_url
-    ```
-    
-    ## Monitoring & Maintenance
-    - Health checks endpoint: /health
-    - Metrics endpoint: /metrics
-    - Logs: Check application logs for errors
-    """
-    return guide
 
 # Run the application
 if __name__ == "__main__":
